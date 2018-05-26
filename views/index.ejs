@@ -1,0 +1,162 @@
+<html>
+   <head>
+      <title>CRUD with NODE JS</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/css/materialize.min.css">
+      <style type="text/css">
+          .form_row{margin-top: 30px;}
+          .loading{border:none !important;}
+          .loading th{padding:0px;}
+          .loading div{margin-top: 0px;}
+      </style>
+   </head>
+   <body>
+     <div class="container">
+      <div class="section">
+       <center><h4> CRUD WITH NODE JS</h4></center>
+       <div class="row form_row">
+              <div class="col s6" style="background:#f8f8f8;padding:50px;">
+                  <p>Add Record to DB</p><br/>
+                  <form method="post" id="add_data" >
+                    <div class="input-field">
+                      <input id="first_name" type="text" class="validate">
+                      <label for="first_name">First Name</label>
+                    </div>
+                    <div class="input-field">
+                      <input id="last_name" type="text" class="validate">
+                      <label for="last_name">Last Name</label>
+                    </div>
+                    <input type="submit" name="submit" value="Submit" class="btn-large" />
+                  </form>
+              </div>
+              <div class="col s6">
+                <table class="responsive-table" id="records_tbl">
+                  <thead>
+                    <tr>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Action</th>
+                    </tr>
+                    <tr class="loading" id="loading">
+                          <th colspan="3">
+                              <div class="progress"><div class="indeterminate"></div></div>
+                          </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+       </div>
+     </div>
+   </div>
+   <!-- Edit Modal -->
+   <div id="modal1" class="modal">
+     <div class="modal-content">
+       <h4>Edit Record</h4>
+       <form method="post" id="edit_data" >
+         <div class="input-field">
+           <input id="edit_first_name" type="text" class="validate">
+           <label for="edit_first_name" id="edit_first_name_label" class="active">First Name</label>
+         </div>
+         <div class="input-field">
+           <input id="edit_last_name" type="text" class="validate">
+           <label for="edit_last_name" id="edit_last_name_label" class="active">Last Name</label>
+         </div>
+         <input id="unique_id" type="hidden" class="">
+         <input type="submit" name="submit" value="Submit" class="btn" /> <a href="javascript:closeme()" class="btn btn-primary">Close</a>
+       </form>
+     </div>
+   </div>
+   <div class="modal-overlay" id="modal-overlay" style="z-index: 1002; display: none; opacity: 0.5;"></div>
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+   <script type="text/javascript">
+      const form = document.getElementById('add_data');
+      form.addEventListener('submit',function(e){
+          const data = { 'first_name' : document.getElementById('first_name').value , 'last_name' :  document.getElementById('last_name').value };
+          fetch('http://localhost:3000/crudM',{
+              method : 'post',
+              body : JSON.stringify(data),
+              headers : new Headers({
+                'content-type' : 'application/json'
+              })
+          }).then( res => res.json() )
+            .catch(err => console.log(err));
+
+          M.toast({html: 'Record Inserted successfully!', classes: 'rounded'});
+          form.reset();
+          e.preventDefault();
+      });
+      const eform = document.getElementById('edit_data');
+      eform.addEventListener('submit',function(e){
+          const data = { 'first_name' : document.getElementById('edit_first_name').value , 'last_name' :  document.getElementById('edit_last_name').value , 'id' :  document.getElementById('unique_id').value };
+          fetch('http://localhost:3000/crudM',{
+              method : 'put',
+              body : JSON.stringify(data),
+              headers : new Headers({
+                'content-type' : 'application/json'
+              })
+          }).then( res => res.json() )
+            .catch(err => console.log(err));
+          closeme();
+          M.toast({html: 'Record updated successfully!', classes: 'rounded'});
+          form.reset();
+          e.preventDefault();
+      });      
+      fetch('http://localhost:3000/crudM')
+        .then( res => res.json() )
+        .then( data => {
+               document.getElementById("loading").style.display = "none";
+               var results = data.results;
+               var count = results.length;
+               var table = document.getElementById("records_tbl").getElementsByTagName('tbody')[0];
+               var count = 0;
+               results.forEach((result) => {
+                    var row = table.insertRow(count);
+                    row.id = result._id;
+                    var cell1 = row.insertCell(0);
+                    var cell2 = row.insertCell(1);
+                    var cell3 = row.insertCell(2);
+                    // Add some text to the new cells:
+                    cell1.innerHTML = result.first_name;
+                    cell2.innerHTML = result.last_name;
+                    cell3.innerHTML = "<a href='javascript:editmodal(\""+ result.first_name +"\",\""+ result.last_name + "\",\""+ result._id + "\")' class='btn edit_btn'>Edit</a> <a href='javascript:deleteme(\""+ result._id +"\")' class='btn'>Delete</a>";
+                    count++;
+                });
+        })
+        .catch(err => console.log(err));
+
+        function editmodal(first_name,last_name,unique_id){
+              document.getElementById('edit_first_name').value = first_name;
+              document.getElementById('edit_last_name').value = last_name;
+              document.getElementById('unique_id').value = unique_id;
+              document.getElementById('edit_first_name_label').classList.add("active");
+              document.getElementById('edit_last_name_label').classList.add("active");
+              document.getElementById('modal-overlay').style.display='block';
+              document.getElementById('modal1').style.display='block';
+              document.getElementById('modal1').style.zIndex ='1003';
+              document.getElementById('modal1').style.opacity='1';
+              document.getElementById('modal1').style.top='10%';
+              document.getElementById('modal1').style.transform='scaleX(1) scaleY(1)';
+        }
+        function closeme(){
+          document.getElementById('modal-overlay').style.display='none';
+          document.getElementById('modal1').style.display='none';
+        }
+        function deleteme(id){
+          const data = { 'id' : id};
+          fetch('http://localhost:3000/crudM',{
+              method : 'DELETE',
+              body : JSON.stringify(data),
+              headers : new Headers({
+                'content-type' : 'application/json'
+              })
+          }).then( res => res.json() )
+            .catch(err => console.log(err));
+          M.toast({html: 'Record deleted successfully!', classes: 'rounded'});
+          document.getElementById(id).style.display = "none";
+        }
+   </script>
+   </body>
+</html>
