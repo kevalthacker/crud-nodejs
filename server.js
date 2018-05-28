@@ -28,4 +28,5 @@ app.use('/',index);
 app.use('/crudM',crudM);
 
 /* Port Listen */
-app.listen(3000,function(){ console.log("3000 Port Stated!"); })
+var port = process.env.PORT || 3000;
+app.listen(port,function(){ console.log("3000 Port Stated!"); })
